@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaikoNation - AI osu!Taiko Chart Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-glow">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo-badge">AI</div>
+        <div class="logo-text">
+          <h1>TAIKO<span>NATION</span></h1>
+          <p class="subtitle">Deep Learning osu!Taiko Beatmap Generator</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge tag-model">CNN + LSTM Engine</span>
+        <span class="badge tag-status" id="system-status">● Online</span>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="main-grid">
+      <!-- Left Column: Inputs & Controls -->
+      <section class="card glass-panel control-section">
+        <div class="card-header">
+          <div class="section-title">
+            <span class="step-num">01</span>
+            <h2>楽曲の選択・アップロード</h2>
+          </div>
+          <div class="mode-tabs">
+            <button class="tab-btn active" id="tab-upload">ファイルアップロード</button>
+            <button class="tab-btn" id="tab-presets">プリセット楽曲</button>
+          </div>
+        </div>
+
+        <!-- Upload Mode -->
+        <div class="mode-content" id="mode-upload">
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="audio-input" accept="audio/*,.mp3,.wav,.ogg,.flac" hidden>
+            <div class="drop-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </div>
+            <p class="drop-main-text">楽曲ファイルをドラッグ＆ドロップ</p>
+            <p class="drop-sub-text">または <span class="highlight">ファイルを選択</span> (MP3, WAV, OGG, FLAC)</p>
+            <div class="file-info hidden" id="file-info">
+              <span class="file-name" id="file-name">song.mp3</span>
+              <span class="file-size" id="file-size">(0 MB)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presets Mode -->
+        <div class="mode-content hidden" id="mode-presets">
+          <div class="preset-selector-box">
+            <label for="preset-select">学習データセット楽曲を選択:</label>
+            <select id="preset-select" class="custom-select">
+              <option value="" disabled selected>読み込み中...</option>
+            </select>
+            <p class="preset-note">※ リポジトリに含まれる特徴量データから瞬時に推論します。</p>
+          </div>
+        </div>
+
+        <!-- Song Metadata -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="input-title">曲名 (Title)</label>
+            <input type="text" id="input-title" placeholder="例: Stardust Prism" class="custom-input">
+          </div>
+          <div class="form-group">
+            <label for="input-artist">アーティスト (Artist)</label>
+            <input type="text" id="input-artist" placeholder="例: Camellia" class="custom-input">
+          </div>
+        </div>
+
+        <!-- Generation Settings -->
+        <div class="card-header mt-4">
+          <div class="section-title">
+            <span class="step-num">02</span>
+            <h2>生成パラメータ設定</h2>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="form-group">
+            <label for="input-diff">難易度名 (Version)</label>
+            <select id="input-diff" class="custom-select">
+              <option value="TaikoNation [Oni]">鬼 (Oni)</option>
+              <option value="TaikoNation [Inner Oni]">おに裏 (Inner Oni)</option>
+              <option value="TaikoNation [Muzukashii]">むずかしい (Muzukashii)</option>
+              <option value="TaikoNation [Futsuu]">ふつう (Futsuu)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <div class="slider-header">
+              <label for="slider-density">ノーツ密度 (Note Density)</label>
+              <span class="slider-val" id="val-density">1.0x</span>
+            </div>
+            <input type="range" id="slider-density" min="0.5" max="2.0" step="0.1" value="1.0" class="custom-slider">
+          </div>
+
+          <div class="form-group">
+            <div class="slider-header">
+              <label for="slider-temp">サンプリング温度 (Creativity)</label>
+              <span class="slider-val" id="val-temp">0.8</span>
+            </div>
+            <input type="range" id="slider-temp" min="0.2" max="1.5" step="0.05" value="0.8" class="custom-slider">
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-area">
+          <button id="btn-generate" class="btn-primary" disabled>
+            <span class="btn-glow"></span>
+            <span class="btn-text">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              AI 譜面を自動生成する
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Column: Results & Interactive Preview -->
+      <section class="card glass-panel result-section">
+        <div class="card-header">
+          <div class="section-title">
+            <span class="step-num">03</span>
+            <h2>生成結果 & 譜面プレビュー</h2>
+          </div>
+          <span class="result-status" id="result-status-badge">待機中 (Ready)</span>
+        </div>
+
+        <!-- Processing State -->
+        <div class="processing-container hidden" id="processing-view">
+          <div class="taiko-drum-animation">
+            <div class="drum-circle drum-left"></div>
+            <div class="drum-circle drum-right"></div>
+          </div>
+          <h3 class="processing-title" id="processing-text">AI推論を実行中...</h3>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+          <p class="processing-desc">特徴量分析 → 1D-CNN + LSTM 推論 → osu!taikoパッケージング</p>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div class="placeholder-container" id="placeholder-view">
+          <div class="placeholder-art">
+            <div class="note-icon don-big"></div>
+            <div class="note-icon kat-big"></div>
+            <div class="note-icon don-small"></div>
+            <div class="note-icon kat-small"></div>
+          </div>
+          <h3>楽曲をアップロードして譜面生成を開始してください</h3>
+          <p>生成完了後、太鼓レーンでのインタラクティブプレビューと<br><strong>.osz (osu!用パッケージ)</strong> および <strong>.osu</strong> がダウンロードできます。</p>
+        </div>
+
+        <!-- Completed Result State -->
+        <div class="completed-container hidden" id="completed-view">
+          <div class="song-meta-card">
+            <div class="song-titles">
+              <h3 id="res-title">Song Title</h3>
+              <p id="res-artist">Artist Name</p>
+            </div>
+            <div class="song-stats-row">
+              <div class="stat-item">
+                <span class="stat-label">総ノーツ数</span>
+                <span class="stat-num" id="res-total-notes">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">ドン (Red)</span>
+                <span class="stat-num don-color" id="res-don-count">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">カツ (Blue)</span>
+                <span class="stat-num kat-color" id="res-kat-count">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">楽曲の長さ</span>
+                <span class="stat-num" id="res-duration">0:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Taiko Lane Canvas Preview -->
+          <div class="lane-container">
+            <div class="lane-header">
+              <span>TAIKO LANE PREVIEW</span>
+              <div class="playback-controls">
+                <button id="btn-play-pause" class="btn-icon">
+                  <svg id="icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <svg id="icon-pause" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg>
+                </button>
+                <span class="time-display" id="time-display">00:00 / 00:00</span>
+              </div>
+            </div>
+            <div class="lane-canvas-wrap">
+              <canvas id="taiko-canvas" width="800" height="120"></canvas>
+            </div>
+            <audio id="audio-player" class="hidden"></audio>
+          </div>
+
+          <!-- Downloads Area -->
+          <div class="download-section">
+            <button id="btn-download-osz" class="btn-download btn-osz">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <div class="btn-meta">
+                <span class="dl-title">osu! 形式パッケージ (.osz)</span>
+                <span class="dl-subtitle">osu!にドラッグ＆ドロップしてすぐ遊べます</span>
+              </div>
+            </button>
+
+            <button id="btn-download-osu" class="btn-download btn-osu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              <div class="btn-meta">
+                <span class="dl-title">譜面ファイルのみ (.osu)</span>
+                <span class="dl-subtitle">エディタ・解析用</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>TaikoNation v1.0 • Powered by Emily Halina & Matthew Guzdial Architecture • PyTorch Local Engine</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
